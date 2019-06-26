@@ -6,7 +6,7 @@ Metal Shell is a **proof of concept** and a playground so far. For now, it **onl
 
 ## Getting Started
 
-Clone the repository on a Windows 64 machine, and then type
+Clone the repository on a Windows 64 machine. Download the JCEF library from [https://github.com/dtanzer/metalshell/releases/tag/jcef-lib-201906](https://github.com/dtanzer/metalshell/releases/tag/jcef-lib-201906) and extract the files inside the ZIP to ```shell/lib/jcef``` (after that, you should have a directory called ```win64``` inside). Then, type
 
     gradlew example:run
     
