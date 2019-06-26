@@ -1,0 +1,9 @@
+dependencies {
+	compile files('lib/jcef/win64/gluegen-rt-natives-windows-amd64.jar')
+	compile files('lib/jcef/win64/gluegen-rt.jar')
+	compile files('lib/jcef/win64/jcef.jar')
+	compile files('lib/jcef/win64/jogl-all-natives-windows-amd64.jar')
+	compile files('lib/jcef/win64/jogl-all.jar')
+
+	compile ('com.google.code.gson:gson:2.8.5')
+}

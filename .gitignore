@@ -1,0 +1,7 @@
+.idea
+.gradle
+out
+build
+node_modules
+*.log
+shell/lib/jcef

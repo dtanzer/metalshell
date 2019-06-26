@@ -1,0 +1,10 @@
+apply plugin:'application'
+mainClassName = "net.davidtanzer.metalshell.example.Example"
+
+dependencies {
+	compile project(':shell')
+}
+
+run {
+	systemProperty "java.library.path", System.getProperty("user.dir")+"/shell/lib/jcef/win64/native"
+}

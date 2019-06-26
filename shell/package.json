@@ -1,0 +1,34 @@
+{
+  "name": "metalshell",
+  "version": "0.0.1",
+  "description": "HTML user interfaces for JVM applications",
+  "main": "index.js",
+  "type": "module",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dtanzer/metalshell.git"
+  },
+  "author": "David Tanzer",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/dtanzer/metalshell/issues"
+  },
+  "homepage": "https://github.com/dtanzer/metalshell#readme",
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
+    "babel-jest": "^24.8.0",
+    "jest": "^24.8.0"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/src/test/javascript/**/*.spec.js"
+    ]
+  }
+}

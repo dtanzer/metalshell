@@ -1,0 +1,25 @@
+allprojects {
+	apply plugin: 'java'
+
+	sourceCompatibility = 10.0
+	targetCompatibility = 10.0
+	version = '1.0'
+
+	repositories {
+		mavenCentral()
+	}
+}
+
+subprojects {
+	dependencies {
+		testCompile('org.assertj:assertj-core:3.12.2')
+		testCompile('org.junit.jupiter:junit-jupiter:5.4.2')
+		testCompile('org.mockito:mockito-core:2.28.2')
+	}
+}
+
+dependencies {
+	testCompile project(':shell')
+	testCompile project(':example')
+	testCompile('org.junit.jupiter:junit-jupiter:5.4.2')
+}
