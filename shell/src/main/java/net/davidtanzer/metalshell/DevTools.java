@@ -16,36 +16,65 @@
 */
 package net.davidtanzer.metalshell;
 
+import org.cef.browser.CefBrowser;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 class DevTools {
-	private JFrame devToolsFrame;
+	private final FrameFactory frameFactory;
+	private Map<Browser, DevToolsData> registeredBrowsers = new HashMap<>();
+	private JTabbedPane tabbedPane;
 
-	public void addBrowser(String name, Component devToolsUi) {
-		waitForBrowserToInitialize().then(() -> {
-			devToolsFrame = new JFrame();
-			devToolsFrame.getContentPane().add(devToolsUi, BorderLayout.CENTER);
-			devToolsFrame.setSize(800, 600);
-			devToolsFrame.setVisible(true);
-			devToolsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	DevTools() {
+		this(new FrameFactory());
+	}
+
+	DevTools(FrameFactory frameFactory) {
+		this.frameFactory = frameFactory;
+	}
+
+	public void addBrowser(String name, Browser browser, CefBrowser browserDevTools) {
+		browser.addCreatedHandler((b) -> {
+			JFrame frame = frameFactory.createFrameFor(this, browser, browserDevTools);
+			registeredBrowsers.put(browser, new DevToolsData(name, browserDevTools, frame));
 		});
 	}
 
-	private WaitForBrowser waitForBrowserToInitialize() {
-		return new WaitForBrowser();
+	public void removeBrowser(Browser browser) {
+		removeBrowser(browser, ()->{});
 	}
 
-	private class WaitForBrowser {
-		public void then(Runnable runnable) {
-			new Thread(() -> {
-				try {
-					Thread.sleep(1000);
-					runnable.run();
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
-			}).start();
+	public void removeBrowser(Browser browser, Runnable afterClose) {
+		DevToolsData devToolsData = registeredBrowsers.remove(browser);
+
+		boolean devToolsAlreadyClosed = devToolsData == null;
+		if(devToolsAlreadyClosed) {
+			afterClose.run();
+			return;
+		}
+
+		devToolsData.browserDevTools.close(false, () -> {
+			devToolsData.browserDevTools.close(true);
+			devToolsData.frame.dispose();
+			devToolsData.frame = null;
+			afterClose.run();
+		});
+	}
+
+	private class DevToolsData {
+		private final String name;
+		private final CefBrowser browserDevTools;
+		private JFrame frame;
+
+		public DevToolsData(String name, CefBrowser browserDevTools, JFrame frame) {
+			this.name = name;
+			this.browserDevTools = browserDevTools;
+			this.frame = frame;
 		}
 	}
 }

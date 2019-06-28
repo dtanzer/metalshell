@@ -35,9 +35,10 @@ public class BrowserWindow {
 
 		mainFrame.addWindowListener(new WindowAdapter() {
 			@Override public void windowClosing(WindowEvent e) {
-				mainFrame.dispose();
-				onClose.accept(e);
-				// Alternative: CefApp.getInstance().dispose();
+				browser.close(() -> {
+					mainFrame.dispose();
+					onClose.accept(e);
+				});
 			}
 		});
 

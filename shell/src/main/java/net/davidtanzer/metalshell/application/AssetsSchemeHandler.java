@@ -44,6 +44,9 @@ public class AssetsSchemeHandler extends CefResourceHandlerAdapter {
 
 		if(localFile.exists()) {
 			try {
+				if(resource.endsWith(".css")) {
+					return new StreamingResource(new FileInputStream(localFile), "text/css");
+				}
 				return new StreamingResource(new FileInputStream(localFile));
 			} catch (FileNotFoundException e) {
 				throw new IllegalStateException(e);

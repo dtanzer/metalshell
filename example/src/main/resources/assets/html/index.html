@@ -2,7 +2,7 @@
 
 <html>
 	<head>
-		<link rel="stylesheet" href="/css/style.css" />
+		<link rel="stylesheet" href="../css/style.css" />
 	</head>
 	<body>
 		<h1>Welcome to MetalShell</h1>
@@ -10,6 +10,8 @@
 		<h2>Call API</h2>
 
 		<input type="button" onclick="window.callApi(api => api.exampleApi.doSomething('xyz', 17))" value="doSomething()">
+
+		<input type="button" onclick="window.callApi(api => api.exampleApi.switchToSecondWindow())" value="Switch to 2nd window">
 
 		<script type="module" src="jsapi://jsapi/api.js"></script>
 

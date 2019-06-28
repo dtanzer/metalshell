@@ -18,8 +18,11 @@ package net.davidtanzer.metalshell;
 
 import org.cef.CefClient;
 import org.cef.browser.CefBrowser;
-import org.junit.jupiter.api.Disabled;
+import org.cef.handler.CefLifeSpanHandler;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
@@ -29,11 +32,79 @@ import static org.mockito.Mockito.*;
 
 class BrowserTest {
 	@Test
+	void callsCreatedHandlerOnAfterCreatedWhenHandlerIsAvailable() {
+		Configuration config = mock(Configuration.class);
+		CefClient client = mock(CefClient.class);
+		CefBrowser cefBrowser = mock(CefBrowser.class);
+		when(client.createBrowser(any(), anyBoolean(), anyBoolean())).thenReturn(cefBrowser);
+		Browser browser = new Browser("-dummy name-", config, client);
+		Consumer<Browser> createdHandler = mock(Consumer.class);
+		browser.addCreatedHandler(createdHandler);
+
+		ArgumentCaptor<CefLifeSpanHandler> lifeSpanCaptor = ArgumentCaptor.forClass(CefLifeSpanHandler.class);
+		verify(client).addLifeSpanHandler(lifeSpanCaptor.capture());
+		lifeSpanCaptor.getValue().onAfterCreated(cefBrowser);
+
+		verify(createdHandler).accept(browser);
+	}
+
+	@Test
+	void callsCreatedHandlerImmediatelyAtRegisterIfBrowserAlreadyCreated() {
+		Configuration config = mock(Configuration.class);
+		CefClient client = mock(CefClient.class);
+		CefBrowser cefBrowser = mock(CefBrowser.class);
+		when(client.createBrowser(any(), anyBoolean(), anyBoolean())).thenReturn(cefBrowser);
+		Browser browser = new Browser("-dummy name-", config, client);
+		Consumer<Browser> createdHandler = mock(Consumer.class);
+
+		ArgumentCaptor<CefLifeSpanHandler> lifeSpanCaptor = ArgumentCaptor.forClass(CefLifeSpanHandler.class);
+		verify(client).addLifeSpanHandler(lifeSpanCaptor.capture());
+		lifeSpanCaptor.getValue().onAfterCreated(cefBrowser);
+
+		browser.addCreatedHandler(createdHandler);
+		verify(createdHandler).accept(browser);
+	}
+
+	@Test
+	void doesNotCallCreatedHandlerWhenEventIsForDifferentNativeBrowser() {
+		Configuration config = mock(Configuration.class);
+		CefClient client = mock(CefClient.class);
+		CefBrowser cefBrowser = mock(CefBrowser.class);
+		when(client.createBrowser(any(), anyBoolean(), anyBoolean())).thenReturn(cefBrowser);
+		Browser browser = new Browser("-dummy name-", config, client);
+		Consumer<Browser> createdHandler = mock(Consumer.class);
+		browser.addCreatedHandler(createdHandler);
+
+		ArgumentCaptor<CefLifeSpanHandler> lifeSpanCaptor = ArgumentCaptor.forClass(CefLifeSpanHandler.class);
+		verify(client).addLifeSpanHandler(lifeSpanCaptor.capture());
+		lifeSpanCaptor.getValue().onAfterCreated(mock(CefBrowser.class));
+
+		verify(createdHandler, never()).accept(browser);
+	}
+
+	@Test
+	void callsClosedHandlerWhenBrowserWasClosed() {
+		Configuration config = mock(Configuration.class);
+		CefClient client = mock(CefClient.class);
+		CefBrowser cefBrowser = mock(CefBrowser.class);
+		doAnswer(invocation -> { ((Runnable) invocation.getArgument(1)).run();  return null; })
+				.when(cefBrowser).close(anyBoolean(), any());
+		when(client.createBrowser(any(), anyBoolean(), anyBoolean())).thenReturn(cefBrowser);
+		Browser browser = new Browser("-dummy name-", config, client);
+		Consumer<Browser> closedHandler = mock(Consumer.class);
+		browser.addClosedHandler(closedHandler);
+
+		browser.close(() -> {});
+
+		verify(closedHandler).accept(browser);
+	}
+
+	@Test
 	void assumeUiApiReturnsImplementationOfInterface() {
 		Configuration config = mock(Configuration.class);
 		CefClient client = mock(CefClient.class);
 		when(client.createBrowser(any(), anyBoolean(), anyBoolean())).thenReturn(mock(CefBrowser.class));
-		Browser browser = new Browser(config, client);
+		Browser browser = new Browser("-dummy name-", config, client);
 
 		TestUiApi api = browser.assumeUiApi("foo", TestUiApi.class);
 
@@ -46,7 +117,7 @@ class BrowserTest {
 		CefClient client = mock(CefClient.class);
 		CefBrowser cefBrowser = mock(CefBrowser.class);
 		when(client.createBrowser(any(), anyBoolean(), anyBoolean())).thenReturn(cefBrowser);
-		Browser browser = new Browser(config, client);
+		Browser browser = new Browser("-dummy name-", config, client);
 
 		TestUiApi api = browser.assumeUiApi("foo", TestUiApi.class);
 		assumeThat(api).isNotNull();
@@ -61,7 +132,7 @@ class BrowserTest {
 		CefClient client = mock(CefClient.class);
 		CefBrowser cefBrowser = mock(CefBrowser.class);
 		when(client.createBrowser(any(), anyBoolean(), anyBoolean())).thenReturn(cefBrowser);
-		Browser browser = new Browser(config, client);
+		Browser browser = new Browser("-dummy name-", config, client);
 
 		TestUiApi api = browser.assumeUiApi("foo", TestUiApi.class);
 		assumeThat(api).isNotNull();

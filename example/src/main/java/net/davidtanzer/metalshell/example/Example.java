@@ -27,7 +27,7 @@ public class Example {
 		BrowserWindow browserWindow = shell.createBrowserWindow("Example App", config.configuration());
 
 		ExampleUiApi uiApi = browserWindow.assumeUiApi("example", ExampleUiApi.class);
-		shell.registerApi("exampleApi", new ExampleApi(uiApi));
+		shell.registerApi("exampleApi", new ExampleApi(uiApi, new SecondWindow(shell, config)));
 
 		browserWindow.show();
 	}

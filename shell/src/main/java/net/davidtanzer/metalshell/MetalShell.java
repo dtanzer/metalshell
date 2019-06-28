@@ -17,12 +17,17 @@
 package net.davidtanzer.metalshell;
 
 import net.davidtanzer.metalshell.application.ApplicationHandler;
+import net.davidtanzer.metalshell.jsapi.ClassEntry;
 import net.davidtanzer.metalshell.jsapi.JsCacheBuilder;
 import net.davidtanzer.metalshell.jsapi.MessageRouterHandler;
 import org.cef.CefApp;
 import org.cef.CefClient;
 import org.cef.CefSettings;
 import org.cef.browser.CefMessageRouter;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Consumer;
 
 public class MetalShell {
 	private final JsCacheBuilder jsCacheBuilder = new JsCacheBuilder();
@@ -32,21 +37,28 @@ public class MetalShell {
 		return msgRouter;
 	});
 	private final DevTools devTools = new DevTools();
+	private final Consumer<MetalShell> onLastBrowserClosed;
+	private final Set<Browser> registeredBrowsers = new HashSet<>();
 
 	private CefApp cefApp;
 
 	public static MetalShell bootstrap() {
-		return new MetalShell().initialize();
+		return bootstrap(shell -> shell.disposeApp());
 	}
 
-	private MetalShell() {
+	public static MetalShell bootstrap(Consumer<MetalShell> onLastBrowserClosed) {
+		return new MetalShell(onLastBrowserClosed).initialize();
+	}
+
+	private MetalShell(Consumer<MetalShell> onLastBrowserClosed) {
+		this.onLastBrowserClosed = onLastBrowserClosed;
 	}
 
 	private MetalShell initialize() {
 		CefSettings settings = new CefSettings();
 		settings.windowless_rendering_enabled = false;
 
-		cefApp = CefApp.getInstance(settings);
+		cefApp = CefApp.getInstance(new String[] {"--disable-gpu", "--no-gpu"}, settings);
 		cefApp.addAppHandler(new ApplicationHandler());
 
 		return this;
@@ -58,21 +70,41 @@ public class MetalShell {
 
 	public BrowserWindow createBrowserWindow(String title, Configuration config) {
 		Browser browser = createBrowser(title, config);
-		//FIXME: Only dispose when the last window is closed. Or create an exit method?
-		return new BrowserWindow(browser, e -> cefApp.dispose());
+
+		return new BrowserWindow(browser, e -> {});
+	}
+
+	private void browserClosed(Browser browser) {
+		registeredBrowsers.remove(browser);
+
+		if(registeredBrowsers.isEmpty()) {
+			onLastBrowserClosed.accept(this);
+		}
 	}
 
 	public Browser createBrowser(String name, Configuration config) {
+		if(cefApp == null) {
+			initialize();
+		}
+
 		CefClient client = cefApp.createClient();
 		apis.addMessageRouters(client);
-		Browser browser = new Browser(config, client);
 
-		devTools.addBrowser(name, browser.getDevToolsUi());
+		Browser browser = new Browser(name, config, client);
+		browser.addClosedHandler(this::browserClosed);
+		registeredBrowsers.add(browser);
+
+		browser.connectToDevTools(devTools);
 
 		return browser;
 	}
 
 	public void registerApi(String baseName, Object api) {
 		apis.register(baseName, api);
+	}
+
+	private void disposeApp() {
+		cefApp.dispose();
+		cefApp = null;
 	}
 }

@@ -23,19 +23,35 @@ import org.cef.browser.CefFrame;
 import org.cef.callback.CefContextMenuParams;
 import org.cef.callback.CefMenuModel;
 import org.cef.handler.CefContextMenuHandlerAdapter;
+import org.cef.handler.CefLifeSpanHandlerAdapter;
 
-import java.awt.*;
+import java.awt.Component;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
-import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 
 public class Browser {
-	private final CefBrowser browser;
-	private final CefBrowser devTools;
-	private Component browserUI;
-	private Component devToolsUi;
+	private final CefBrowser nativeBrowser;
+	private final Configuration config;
+	private final CefClient client;
 
-	Browser(Configuration config, CefClient client) {
+	private CefBrowser browserDevTools;
+	private final String name;
+	private Component browserUI;
+	private DevTools devTools;
+	private Set<Consumer<Browser>> createdHandlers = new HashSet<>();
+	private Set<Consumer<Browser>> closedHandlers = new HashSet<>();
+	private boolean nativeBrowserCreated = false;
+
+	Browser(String name, Configuration config, CefClient client) {
+		this.name = name;
+		this.config = config;
+		this.client = client;
+
 		client.addContextMenuHandler(new CefContextMenuHandlerAdapter() {
 			@Override
 			public void onBeforeContextMenu(CefBrowser cefBrowser, CefFrame cefFrame, CefContextMenuParams cefContextMenuParams, CefMenuModel cefMenuModel) {
@@ -43,29 +59,21 @@ public class Browser {
 			}
 		});
 
-		browser = client.createBrowser( config.getEntryPoint(), OS.isLinux(), true);
-		devTools = browser.getDevTools();
+		nativeBrowser = client.createBrowser( config.getEntryPoint(), OS.isLinux(), true);
+		client.addLifeSpanHandler(new LifeSpanHandler());
 	}
 
 	public Component getBrowserUi() {
 		if(browserUI == null) {
-			browserUI = browser.getUIComponent();
+			browserUI = nativeBrowser.getUIComponent();
 		}
 
 		return browserUI;
 	}
 
-	Component getDevToolsUi() {
-		if(devToolsUi == null) {
-			devToolsUi = devTools.getUIComponent();
-		}
-
-		return devToolsUi;
-	}
-
 	public <T> T assumeUiApi(String apiId, Class<T> api) {
 		InvocationHandler handler = (self, method, args) -> {
-			browser.executeJavaScript("window.uiApi."+apiId+"."+method.getName()+"("+collectArgs(args)+");", "", 0);
+			nativeBrowser.executeJavaScript("window.uiApi."+apiId+"."+method.getName()+"("+collectArgs(args)+");", "", 0);
 			return null;
 		};
 		return (T) Proxy.newProxyInstance(api.getClassLoader(), new Class[] {api}, handler);
@@ -89,5 +97,71 @@ public class Browser {
 			}
 		}
 		return argsBuilder.toString();
+	}
+
+	void connectToDevTools(DevTools devTools) {
+		this.devTools = devTools;
+		browserDevTools = nativeBrowser.getDevTools();
+		devTools.addBrowser(name, this, this.browserDevTools);
+	}
+
+	public void close(Runnable onAfterClose) {
+		if(browserDevTools != null) {
+			this.devTools.removeBrowser(this, () -> {
+				closeNativeBrowser(onAfterClose);
+			});
+		} else {
+			closeNativeBrowser(onAfterClose);
+		}
+	}
+
+	public CefBrowser getNativeBrowser() {
+		return nativeBrowser;
+	}
+
+	private void closeNativeBrowser(Runnable onAfterClose) {
+		nativeBrowser.close(false, () -> {
+			nativeBrowser.setCloseAllowed();
+			nativeBrowser.close(true);
+			onAfterClose.run();
+			closedHandlers.stream().forEach(h -> h.accept(this));
+		});
+	}
+
+	@Override
+	public String toString() {
+		return "{ \"type\": \"MetalShell Browser\", \"name\": \""+name+"\", \"config\": "+config+"}";
+	}
+
+	public void addCreatedHandler(Consumer<Browser> createdHandler) {
+		this.createdHandlers.add(createdHandler);
+		if(nativeBrowserCreated) {
+			createdHandler.accept(this);
+		}
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void addClosedHandler(Consumer<Browser> browserClosed) {
+		closedHandlers.add(browserClosed);
+	}
+
+	private class LifeSpanHandler extends CefLifeSpanHandlerAdapter {
+		@Override
+		public void onAfterCreated(CefBrowser cefBrowser) {
+			if(cefBrowser != nativeBrowser) {
+				return;
+			}
+
+			nativeBrowserCreated = true;
+			createdHandlers.stream().forEach(h -> h.accept(Browser.this));
+		}
+
+		@Override
+		public boolean doClose(CefBrowser cefBrowser) {
+			return cefBrowser.doClose();
+		}
 	}
 }

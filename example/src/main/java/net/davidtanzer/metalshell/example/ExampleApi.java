@@ -18,10 +18,12 @@ package net.davidtanzer.metalshell.example;
 
 public class ExampleApi {
 	private final ExampleUiApi uiApi;
+	private final SecondWindow secondWindow;
 	private ExampleData data = new ExampleData();
 
-	public ExampleApi(ExampleUiApi uiApi) {
+	public ExampleApi(ExampleUiApi uiApi, SecondWindow secondWindow) {
 		this.uiApi = uiApi;
+		this.secondWindow = secondWindow;
 	}
 
 	public void doSomething(String str, int i) {
@@ -36,6 +38,11 @@ public class ExampleApi {
 			}
 			uiApi.someUiFunction("Data from JAVA!", 1717);
 		}).start();
+	}
+
+	public void switchToSecondWindow() {
+		System.out.println("Switching to 2nd window...");
+		secondWindow.focus();
 	}
 
 	public ExampleData getData() {

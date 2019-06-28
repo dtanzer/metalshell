@@ -17,18 +17,35 @@
 package net.davidtanzer.metalshell;
 
 public class Configuration {
-	private Configuration() {
+
+	private String entryPoint;
+
+	private Configuration(String entryPoint) {
+		this.entryPoint = entryPoint;
 	}
 
 	public String getEntryPoint() {
-		return "assets://assets/html/index.html";
+		return entryPoint;
+	}
+
+	@Override
+	public String toString() {
+		return "{ \"type\": \"MetalShell Configuration\", \"entryPoint\": \""+entryPoint+"\" }";
 	}
 
 	public static class Builder {
+		private String entryPoint = "assets://assets/html/index.html";
+
 		protected Builder() {}
 
 		public Configuration configuration() {
-			return new Configuration();
+			return new Configuration(entryPoint);
+		}
+
+		public Builder withEntryPoint(String entryPoint) {
+			Builder newBuilder = new Builder();
+			newBuilder.entryPoint = entryPoint;
+			return newBuilder;
 		}
 	}
 }
