@@ -6,9 +6,9 @@
 </head>
 <body>
 <ul class="tabs">
-	<li>Intro</li>
-	<li>Description</li>
-	<li>More Content</li>
+	<li><a href="#todo" onClick="window.callApi(api => api.nav.todo())">To Do</a></li>
+	<li><a href="#details" onClick="window.callApi(api => api.nav.details())">Details</a></li>
+	<li><a href="#help" onClick="window.callApi(api => api.nav.help())">Help</a></li>
 </ul>
 <script type="module" src="jsapi://jsapi/api.js"></script>
 </body>

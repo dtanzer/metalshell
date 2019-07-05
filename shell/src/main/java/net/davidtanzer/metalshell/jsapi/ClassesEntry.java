@@ -27,4 +27,8 @@ public class ClassesEntry extends ApiEntry {
 		super.createDescription(builder);
 		builder.append("}");
 	}
+
+	public void addArray(String name, ArrayEntry arrayEntry) {
+		entries.put(name, arrayEntry);
+	}
 }

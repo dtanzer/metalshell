@@ -25,9 +25,9 @@ public class Example {
 		MetalShell shell = MetalShell.bootstrap();
 		Configuration.Builder config = shell.newConfigurationBuilder();
 		BrowserWindow browserWindow = shell.createBrowserWindow("Example App", config.configuration());
+		TodosUiApi todosUiApi = browserWindow.assumeUiApi("todos", TodosUiApi.class);
 
-		ExampleUiApi uiApi = browserWindow.assumeUiApi("example", ExampleUiApi.class);
-		shell.registerApi("exampleApi", new ExampleApi(uiApi, new SecondWindow(shell, config)));
+		shell.registerApi("todo", new ToDoApi(new EditWindow(shell, config), todosUiApi));
 
 		browserWindow.show();
 	}

@@ -30,11 +30,11 @@ export class ApiHandler {
 				Object.keys(apiClass).forEach(classProp => {
 					api[classProp] = new Proxy(function () {}, {
 						apply: (target, thisArg, args) => {
-							handler.functionCallback({
+							return handler.functionCallback({
 								object: k,
 								function: classProp,
 								args,
-							});
+							}, this);
 						},
 					});
 				});
@@ -42,5 +42,33 @@ export class ApiHandler {
 				handler[k] = api;
 			}
 		});
+	}
+
+	_createObjectHandler(objectDescription) {
+		const type = objectDescription['--type'];
+		if(type === 'array') {
+			return objectDescription.items.reduce((result, elem) => [...result, this._createObjectHandler(elem)], []);
+		} else {
+			const objectClass = this.classes[type];
+
+			const result = {};
+			Object.keys(objectClass).forEach(k => {
+				const prop = objectClass[k];
+				if (prop.type === 'function') {
+					result[k] = new Proxy(function () {
+					}, {
+						apply: (target, thisArg, args) => {
+							return this.functionCallback({
+								object: objectDescription['--id'],
+								function: k,
+								args,
+							}, this);
+						},
+					});
+				}
+			});
+
+			return result;
+		}
 	}
 }

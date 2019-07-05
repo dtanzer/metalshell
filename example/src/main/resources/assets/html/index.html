@@ -4,23 +4,43 @@
 	<head>
 		<link rel="stylesheet" href="../css/style.css" />
 	</head>
-	<body>
-		<h1>Welcome to MetalShell</h1>
+	<body class="todo-main">
+		<h1>MetalShell ToDo App</h1>
 
-		<h2>Call API</h2>
+		<ul id="todos-list"></ul>
 
-		<input type="button" onclick="window.callApi(api => api.exampleApi.doSomething('xyz', 17))" value="doSomething()">
-
-		<input type="button" onclick="window.callApi(api => api.exampleApi.switchToSecondWindow())" value="Switch to 2nd window">
+		<template id="item-template">
+			<li>
+				<strong class="text"></strong>
+				<span class="details"></span>
+			</li>
+		</template>
+		<input type="button" onclick="window.callApi(api => api.todo.create())" value="New ToDo">
 
 		<script type="module" src="jsapi://jsapi/api.js"></script>
 
 		<script type="application/javascript">
 			window.onload = () => {
 				console.log("Registering UI API");
-				window.registerUiApi("example", {
-					someUiFunction: (x, y) => console.log("some function called from Java:", x, y)
+				window.registerUiApi("todos", {
+					updateTodos: () => {
+						console.log('updating TODOs from Java backend...')
+						window.callApi(async api => {
+							const todos = await api.todo.getTodos();
+							console.log('Got todos from Java backend', todos);
+							document.getElementById('todos-list').innerHTML='';
+
+							todos.forEach(async t => {
+								const template = document.getElementById('item-template');
+								const item = document.importNode(template.content, true).children[0];
+								item.getElementsByClassName('text')[0].innerText = await t.getText();
+								item.getElementsByClassName('details')[0].innerText = await t.getDetails();
+								document.getElementById('todos-list').appendChild(item);
+							});
+						});
+					}
 				});
+				window.uiApi.todos.updateTodos();
 			}
 		</script>
 	</body>

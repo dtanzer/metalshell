@@ -32,7 +32,7 @@ function callToCef(functionCall) {
 	const result = new Promise((resolve, reject) => {
 		window.cefQuery({
 			request: '--call:'+JSON.stringify(functionCall),
-			onSuccess: (response) => resolve(response),
+			onSuccess: (response) => resolve(JSON.parse(response)),
 			onFailure: (errorCode, errorMessage) => reject(errorCode, errorMessage),
 		});
 	});
@@ -40,8 +40,14 @@ function callToCef(functionCall) {
 	return result;
 }
 
-async function callCefApi(functionCall) {
-	return await callToCef(functionCall);
+async function callCefApi(functionCall, apiHandler) {
+	const result = await callToCef(functionCall);
+	if(result == null || result['--type']==='EMPTY') {
+		return null;
+	} else if(result['--type']==='PRIMITIVE') {
+		return result.value;
+	}
+	return apiHandler._createObjectHandler(result);
 }
 
 window.callApi = async (callback) => {

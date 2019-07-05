@@ -17,6 +17,8 @@
 package net.davidtanzer.metalshell.jsapi;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 public class JsCacheBuilder {
@@ -47,7 +49,7 @@ public class JsCacheBuilder {
 		Method[] methods = objClass.getMethods();
 		for(Method m : methods) {
 			if(!isMethodOfClassObject(m)) {
-				appendFunction(classBuilder, m);
+				appendFunction(classBuilder, m, apiBuilder);
 			}
 		}
 
@@ -56,10 +58,33 @@ public class JsCacheBuilder {
 		return classEntry;
 	}
 
-	private void appendFunction(ClassEntry.Builder classBuilder, Method m) {
-		FunctionEntry.Builder builder = new FunctionEntry.Builder();
+	private void appendFunction(ClassEntry.Builder classBuilder, Method m, JsApiCache.Builder apiBuilder) {
+		FunctionEntry.Builder builder = new FunctionEntry.Builder(c -> appendClassUsedInFunction(c, apiBuilder));
 		builder.setProxiedFunction(m);
 		classBuilder.add(m.getName(), builder.build());
+	}
+
+	private void appendClassUsedInFunction(Class c, JsApiCache.Builder apiBuilder) {
+		if(JsArray.class.isAssignableFrom(c)) {
+			appendArrayType(c, apiBuilder);
+		}
+		//TODO append class that is not an array
+	}
+
+	private void appendArrayType(Class c, JsApiCache.Builder apiBuilder) {
+		ArrayEntry.Builder builder = new ArrayEntry.Builder();
+
+		Type actualTypeArgument = ((ParameterizedType) c.getGenericSuperclass()).getActualTypeArguments()[0];
+		try {
+			Class<?> elementType = Class.forName(actualTypeArgument.getTypeName());
+			builder.setElementType(elementType);
+
+			appendType(apiBuilder, elementType);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalStateException("Could not find class for array type: "+actualTypeArgument.getTypeName());
+		}
+
+		apiBuilder.addArrayType(c, builder.build());
 	}
 
 	private boolean isMethodOfClassObject(Method m) {

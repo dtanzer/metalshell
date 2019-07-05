@@ -79,6 +79,65 @@ describe('ApiHandler', () => {
 		xit('throws an error when the type of a toplevel property is not "object"', () => {});
 	});
 
+	describe('object description from return value', () => {
+		// {
+		// 	"--type": "array",
+		// 	"--id": "1",
+		// 	"--item-type": "net.davidtanzer.metalshell.example.Todo",
+		// 	"items": [
+		// 		{
+		// 			"--id": "2",
+		// 			"--type": "net.davidtanzer.metalshell.example.Todo"
+		// 		}
+		// 		]
+		// }
+
+		it('has functions that were described in object class', () => {
+			const callback = jest.fn();
+			const handler = new ApiHandler(`{ 
+				"--classes": { "Bar": { "f": { "type": "function" }}}
+			}`, callback);
+
+			const desc = handler._createObjectHandler({'--id':'5','--type':'Bar'});
+
+			expect(typeof desc.f).toBe('function');
+		});
+
+		it('calls into function callback with correct object id', () => {
+			const callback = jest.fn();
+			const handler = new ApiHandler(`{ 
+				"--classes": { "Bar": { "f": { "type": "function" }}}
+			}`, callback);
+
+			const desc = handler._createObjectHandler({'--id':'5','--type':'Bar'});
+			desc.f('b', 7);
+
+			expect(callback.mock.calls.length).toBe(1);
+			expect(callback.mock.calls[0][0]).toStrictEqual({
+				object: '5',
+				function: 'f',
+				args: [ 'b', 7],
+			});
+		});
+
+		it('returns an array of objects when type is array', () => {
+			const callback = jest.fn();
+			const handler = new ApiHandler(`{ 
+				"--classes": { "Bar": { "f": { "type": "function" }}}
+			}`, callback);
+
+			const desc = handler._createObjectHandler({
+				"--type": "array",
+				"--id": "1",
+				"--item-type": "net.davidtanzer.metalshell.example.Todo",
+				"items": [{'--id': '5', '--type': 'Bar'}]
+			});
+
+			expect(desc.length).toBe(1);
+			expect(typeof desc[0].f).toBe('function');
+		});
+	});
+
 	describe('calling functions on arbitrary objects', () => {
 		xit('returns primitive return values as javascript primitives', () => {});
 		xit('returns return value as javascript object, bound to java object', () => {});

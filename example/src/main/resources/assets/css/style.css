@@ -37,3 +37,24 @@ body {
 	margin: 0;
 	display: inline-block;
 }
+
+.banner {
+	max-width: 100%;
+	display: block;
+}
+
+.todo-main {
+	padding: 0 1em;
+}
+
+.todo-main textarea, .todo-main input[type="text"] {
+	width: 100%;
+}
+
+.bottom-buttons {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+
+	margin: 2em 1em;
+}

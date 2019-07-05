@@ -20,8 +20,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class ObjectEntryTest {
 	@Test
@@ -53,5 +52,25 @@ class ObjectEntryTest {
 		objectEntry.call("function1", args);
 
 		verify(functionEntry).call(proxiedObject, args);
+	}
+
+	@Test
+	void returnsValueReturnedByFunctionCall() {
+		Object proxiedObject = new Object();
+		FunctionEntry functionEntry = mock(FunctionEntry.class);
+		when(functionEntry.call(any(), any())).thenReturn("expected return value");
+		ClassEntry.Builder classEntryBuilder = new ClassEntry.Builder();
+		classEntryBuilder.add("function1", functionEntry);
+		ClassEntry classEntry = classEntryBuilder.build();
+
+		ObjectEntry.Builder builder = new ObjectEntry.Builder();
+		builder.setClass("ignore", classEntry);
+		builder.setProxiedObject(proxiedObject);
+		ObjectEntry objectEntry = builder.build();
+
+		Object[] args = new Object[] {"one", 2, true};
+		Object returnValue = objectEntry.call("function1", args);
+
+		assertThat(returnValue).isSameAs("expected return value");
 	}
 }

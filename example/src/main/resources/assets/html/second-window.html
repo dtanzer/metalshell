@@ -4,8 +4,51 @@
 <head>
 	<link rel="stylesheet" href="../css/style.css" />
 </head>
-<body>
-<h1>Main Browser</h1>
-<script type="module" src="jsapi://jsapi/api.js"></script>
+<body class="todo-main">
+	<img class="banner" src="../images/two-browsers.png" alt="this window contains two browsers - the tabs above and the main browser here." />
+
+	<div id="todo">
+		<h1>To Do:</h1>
+		<input type="text" id="todo-text" />
+	</div>
+	<div id="details" style="display: none">
+		<h1>Details:</h1>
+		<textarea rows="10" id="todo-details"></textarea>
+	</div>
+	<div id="help" style="display: none">
+		<h1>Help:</h1>
+
+		<p>As you've already read above, this window contains two browsers: One for the tabs and one for this main area. They
+		communicate using the MetalShell Java to JavaScript APIs.</p>
+
+		<p>Those two browsers do not serve any purpose <em>within</em> the ToDo app - they are just there to show how this can
+		be done.</p>
+	</div>
+	<script type="module" src="jsapi://jsapi/api.js"></script>
+
+	<div class="bottom-buttons">
+		<a href="#" onclick="window.callApi(api => api.todo.cancel())">Cancel</a>
+		<input type="button" onclick="window.callApi(
+			api => api.todo.save(
+				document.getElementById('todo-text').value,
+				document.getElementById('todo-details').value)
+		)" value="Save" />
+	</div>
+
+	<script type="application/javascript">
+		window.onload = () => {
+			const show = (tab) => {
+				['todo', 'details', 'help'].forEach(tabName => {
+					document.getElementById(tabName).style.display = (tab === tabName)? 'block' : 'none';
+				});
+			};
+
+			window.registerUiApi("navListener", {
+				toTodo: () => show('todo'),
+				toDetails: () => show('details'),
+				toHelp: () => show('help'),
+			});
+		}
+	</script>
 </body>
 </html>

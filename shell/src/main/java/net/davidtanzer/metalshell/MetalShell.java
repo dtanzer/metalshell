@@ -55,9 +55,10 @@ public class MetalShell {
 
 	private MetalShell initialize() {
 		CefSettings settings = new CefSettings();
+		settings.javascript_flags="--harmony-weak-refs --expose-gc";
 		settings.windowless_rendering_enabled = false;
 
-		String[] args = {"--disable-gpu", "--disable-gpu-compositing"};
+		String[] args = {"--javascript-harmony" /*, "--disable-gpu", "--disable-gpu-compositing"*/};
 		cefApp = CefApp.getInstance(args, settings);
 		cefApp.addAppHandler(new ApplicationHandler(args));
 

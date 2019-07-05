@@ -33,9 +33,9 @@ class ObjectEntry extends ApiEntry {
 		return className;
 	}
 
-	public void call(String functionName, Object[] args) {
+	public Object call(String functionName, Object[] args) {
 		FunctionEntry functionEntry = (FunctionEntry) classEntry.get(functionName);
-		functionEntry.call(proxiedObject, args);
+		return functionEntry.call(proxiedObject, args);
 	}
 
 	public Object getProxiedObject() {

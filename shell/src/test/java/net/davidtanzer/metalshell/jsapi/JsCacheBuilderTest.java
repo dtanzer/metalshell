@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,6 +111,31 @@ class JsCacheBuilderTest {
 		assertThat(((FunctionEntry)functionEntry).getProxiedFunction()).isEqualTo(ObjectWithFunction.class.getMethod("function1", new Class<?>[0]));
 	}
 
+	@Test
+	public void addsArrayToTypesWhenCalledBackToAddClassThatExtendsJsArray() {
+		JsCacheBuilder cacheBuilder = new JsCacheBuilder();
+		Map<String, Object> apis = new HashMap<>();
+		apis.put("api1", new ObjectWithFunctionReturningArray());
+
+		JsApiCache cache = cacheBuilder.buildFrom(apis);
+
+		ApiEntry arrayEntry = cache.get("--classes").get(FooArray.class.getName());
+		assertThat(arrayEntry).isInstanceOf(ArrayEntry.class);
+		assertThat(((ArrayEntry)arrayEntry).getElementType()).isEqualTo(Foo.class);
+	}
+
+	@Test
+	void appendsTypeForJsArrayElementType() {
+		JsCacheBuilder cacheBuilder = new JsCacheBuilder();
+		Map<String, Object> apis = new HashMap<>();
+		apis.put("api1", new ObjectWithFunctionReturningArray());
+
+		JsApiCache cache = cacheBuilder.buildFrom(apis);
+
+		ApiEntry classEntry = cache.get("--classes").get(Foo.class.getName());
+		assertThat(classEntry).isInstanceOf(ClassEntry.class);
+	}
+
 	@Test @Disabled
 	void fixmeFindWayToAddOverloadedFunctions() {
 		fail("Overloaded functions to not exist in JavaScript, so we can only addess a function by name and" +
@@ -118,5 +144,20 @@ class JsCacheBuilderTest {
 	private class ObjectWithFunction {
 		public void function1() {
 		}
+	}
+
+	private class ObjectWithFunctionReturningArray {
+		public FooArray getFoos() {
+			return null;
+		}
+	}
+
+	private class FooArray extends JsArray<Foo> {
+		public FooArray(List<Foo> items) {
+			super(items);
+		}
+	}
+
+	private class Foo {
 	}
 }

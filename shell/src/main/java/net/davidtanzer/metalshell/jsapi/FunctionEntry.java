@@ -18,6 +18,7 @@ package net.davidtanzer.metalshell.jsapi;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.function.Consumer;
 
 class FunctionEntry extends ApiEntry {
 	private Method proxiedFunction;
@@ -27,10 +28,16 @@ class FunctionEntry extends ApiEntry {
 
 	@Override
 	protected void createDescription(StringBuilder builder) {
-		builder.append("{\"type\":\"function\"}");
+		builder.append("{\"type\":\"function\"");
+		if(proxiedFunction != null) {
+			builder.append(",\"returns\":\"")
+					.append(proxiedFunction.getReturnType().getName())
+					.append("\"");
+		}
+		builder.append("}");
 	}
 
-	public void call(Object self, Object[] args) {
+	public Object call(Object self, Object[] args) {
 
 		try {
 			Object[] callArgs = new Object[args.length];
@@ -44,7 +51,7 @@ class FunctionEntry extends ApiEntry {
 				}
 			}
 
-			proxiedFunction.invoke(self, callArgs);
+			return proxiedFunction.invoke(self, callArgs);
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			throw new IllegalStateException("Could not invoke API method "+proxiedFunction+" on object "+self, e);
 		}
@@ -62,12 +69,20 @@ class FunctionEntry extends ApiEntry {
 	}
 
 	static class Builder extends ApiEntry.Builder<FunctionEntry> {
+		private final Consumer<Class<?>> appendClass;
+
 		Builder() {
+			this(c -> {});
+		}
+
+		Builder(Consumer<Class<?>> appendClass) {
 			super(new FunctionEntry());
+			this.appendClass = appendClass;
 		}
 
 		public void setProxiedFunction(Method function) {
 			building.proxiedFunction = function;
+			appendClass.accept(function.getReturnType());
 		}
 	}
 

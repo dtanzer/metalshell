@@ -16,12 +16,20 @@
 */
 package net.davidtanzer.metalshell.jsapi;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+//FIXME setup for tests too complex, refactor!
 public class JsApiCache extends ApiEntry{
+	private Supplier<ObjectEntry.Builder> entryBuilderSupplier;
+	private Supplier<ObjectDescription.Builder> odBuilderSupplier;
+	//FIXME make local to an api call session!
+	private HashMap<CacheKey, ObjectEntry> sessionEntries = new HashMap<>();
+
 	private JsApiCache() {
 	}
 
@@ -38,18 +46,57 @@ public class JsApiCache extends ApiEntry{
 		return entries.get(name);
 	}
 
-	void call(FunctionCall functionCall) {
+	ObjectDescription call(FunctionCall functionCall) {
 		//Check for errors...
 		ObjectEntry objectEntry = (ObjectEntry) this.entries.get(functionCall.getObject());
+		if(objectEntry == null) {
+			objectEntry = this.sessionEntries.get(SessionCacheKey.of(functionCall.getObject()));
+		}
 
-		objectEntry.call(functionCall.getFunction(), functionCall.getArgs());
+		Object result = objectEntry.call(functionCall.getFunction(), functionCall.getArgs());
+		if(result instanceof JsArray<?>) {
+			Class<?> elementType = null;
+			try {
+				ParameterizedType genericSuperclass = (ParameterizedType) result.getClass().getGenericSuperclass();
+				String typeName = genericSuperclass.getActualTypeArguments()[0].getTypeName();
+				elementType = Class.forName(typeName);
+			} catch (ClassNotFoundException e) {
+				throw new IllegalStateException("Could not get element type of JsArray", e);
+			}
+			JsArray<?> jsArray = (JsArray<?>) result;
+			ObjectDescription.ArrayDescriptionBuilder arrayDescriptionBuilder = odBuilderSupplier.get()
+					.setArray(new SessionCacheKey(), jsArray, elementType);
+
+			for(Object item : jsArray.getItems()) {
+				SessionCacheKey cacheKey = new SessionCacheKey();
+
+				ObjectEntry.Builder oeBuilder = entryBuilderSupplier.get();
+				oeBuilder.setProxiedObject(item);
+				oeBuilder.setClass(item.getClass().getName(), (ClassEntry) this.entries.get("--classes").get(item.getClass().getName()));
+				sessionEntries.put(cacheKey, oeBuilder.build());
+
+				arrayDescriptionBuilder.addItem(cacheKey, item);
+			}
+
+			return arrayDescriptionBuilder
+					.build();
+		} else if(result == null) {
+			return odBuilderSupplier.get().empty();
+		}
+
+		return odBuilderSupplier.get().setObject(null, result).build();
 	}
 
 	static class Builder extends ApiEntry.Builder<JsApiCache> {
 		private Set<Class<?>> classes = new HashSet<>();
 
 		public Builder() {
+			this(ObjectDescription.Builder::new, ObjectEntry.Builder::new);
+		}
+		public Builder(Supplier<ObjectDescription.Builder> odBuilderSupplier, Supplier<ObjectEntry.Builder> entryBuilderSupplier) {
 			super(new JsApiCache());
+			this.building.odBuilderSupplier = odBuilderSupplier;
+			this.building.entryBuilderSupplier = entryBuilderSupplier;
 		}
 
 		public void add(String apiBaseName, ApiEntry apiEntry) {
@@ -61,14 +108,26 @@ public class JsApiCache extends ApiEntry{
 		}
 
 		public void addClass(Class<?> objClass, ClassEntry classEntry) {
-			if(hasClass(objClass)) {
+			add(objClass, classEntry, ClassesEntry::addClass);
+		}
+
+		public void addArrayType(Class c, ArrayEntry arrayEntry) {
+			add(c, arrayEntry, ClassesEntry::addArray);
+		}
+
+		private <T> void add(Class c, T entry, Adder<T> adder) {
+			if(hasClass(c)) {
 				return;
 			}
 			if(!building.entries.containsKey("--classes")) {
 				building.entries.put("--classes", new ClassesEntry());
 			}
-			classes.add(objClass);
-			((ClassesEntry)building.entries.get("--classes")).addClass(objClass.getName(), classEntry);
+			classes.add(c);
+			adder.addTo(((ClassesEntry)building.entries.get("--classes")), c.getName(), entry);
 		}
+	}
+
+	private interface Adder<T> {
+		void addTo(ClassesEntry classesEntry, String name, T entry);
 	}
 }

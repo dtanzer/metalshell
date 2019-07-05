@@ -20,10 +20,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class FunctionEntryTest {
 	@Test
@@ -35,6 +36,33 @@ class FunctionEntryTest {
 		entry.createDescription(descBuilder);
 
 		assertThat(descBuilder.toString()).isEqualTo("{\"type\":\"function\"}");
+	}
+
+	@Test
+	void setsReturnTypeToArrayWhenInstanceOfJsArray() throws NoSuchMethodException {
+		FunctionEntry.Builder builder = new FunctionEntry.Builder();
+		Method functionReturningArray = ApiObject.class.getMethod("stringArray");
+		builder.setProxiedFunction(functionReturningArray);
+		FunctionEntry entry = builder.build();
+
+		StringBuilder descBuilder = new StringBuilder();
+		entry.createDescription(descBuilder);
+
+		assertThat(descBuilder.toString()).isEqualTo("{\"type\":\"function\",\"returns\":\"net.davidtanzer.metalshell.jsapi.FunctionEntryTest$StringArray\"}");
+	}
+
+	@Test
+	void addsReturnTypeToParent() throws NoSuchMethodException {
+		Consumer<Class<?>> consumer = mock(Consumer.class);
+		FunctionEntry.Builder builder = new FunctionEntry.Builder(consumer);
+		Method functionReturningArray = ApiObject.class.getMethod("stringArray");
+		builder.setProxiedFunction(functionReturningArray);
+		FunctionEntry entry = builder.build();
+
+		StringBuilder descBuilder = new StringBuilder();
+		entry.createDescription(descBuilder);
+
+		verify(consumer).accept(StringArray.class);
 	}
 
 	@Test
@@ -76,6 +104,21 @@ class FunctionEntryTest {
 		verify(apiObject).simpleArgumentConversionsNecessary("the string", 12, 13);
 	}
 
+	@Test
+	void callReturnsValueReturnedByProxiedFunction() throws NoSuchMethodException {
+		ApiObject apiObject = mock(ApiObject.class);
+		StringArray expectedReturnValue = mock(StringArray.class);
+		when(apiObject.stringArray()).thenReturn(expectedReturnValue);
+		Method runMethod = apiObject.getClass().getMethod("stringArray");
+		FunctionEntry.Builder builder = new FunctionEntry.Builder();
+		builder.setProxiedFunction(runMethod);
+		FunctionEntry entry = builder.build();
+
+		Object returnValue = entry.call(apiObject, new Object[0]);
+
+		assertThat(returnValue).isSameAs(expectedReturnValue);
+	}
+
 	@Test @Disabled
 	void todoAlsoTestNullValues() {
 
@@ -86,11 +129,19 @@ class FunctionEntryTest {
 		}
 
 		public void argumentsMatch(String str, Integer x) {
-
 		}
 
 		public void simpleArgumentConversionsNecessary(String str, Integer x, int y) {
+		}
 
+		public StringArray stringArray() {
+			return null;
+		}
+	}
+
+	private class StringArray extends JsArray<String> {
+		public StringArray(List<String> items) {
+			super(items);
 		}
 	}
 }

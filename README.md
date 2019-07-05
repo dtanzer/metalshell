@@ -1,10 +1,20 @@
-# Metal Shell
+# MetalShell
 
 Build GUIs for Java / JVM applications with HTML, CSS and JavaScript (think: "Electron, but for Java").
 
-Metal Shell is a **proof of concept** and a playground so far. For now, it **only** works on **Win64** (but adding more operating systems is definitely a priority for me). Do not use it for anything productive yet - But please play around with it and send me your feedback.
+![Screenshot: Two Browsers](documentation/images/screenshot_two_browsers.png)
+
+Metal Shell is a **proof of concept** and a playground so far. There are probably a thousand more things to do for it to become production ready. For now, it **only** works on **Win64** (but adding more operating systems is definitely a priority for me). Do not use it for anything productive yet - But please play around with it and send me your feedback.
 
 Want to stay in touch with the progress of MetalShell? Star this project and follow me on Twitter, I am [@dtanzer](https://twitter.com/dtanzer/) there.
+
+## Why MetalShell
+
+The Java Chromium Embedded Framework - or [java-cef](https://bitbucket.org/chromiumembedded/java-cef) - provides a way for integrating a browser in your Java applications. But its API is very close to CEF and does not feel natural in Java - it is sometimes even quite hard to use. And there are other tools for embedding a browser in Java, some of them quite expensive.
+
+But when I started with MetalShell, I did not only want a browser in Java. I wanted and opinionated library for integrating a browser UI in Java applications, with an API that is easy to use.
+
+MetalShell tries to give you an API that "just works", at least for common or simple cases, so you can concentrate on **your** code.
 
 ## Getting Started
 
@@ -79,6 +89,44 @@ To be able to call back into Java, you have to load a bit of JavaScript from Met
     window.callApi(api => api.exampleApi.doSomething('xyz', 17))
 
 where ```exampleApi``` is the name you gave the API when registering it and ```doSomething``` is the name of the Java method on the registered class.
+
+### Returning Values from Java to JavaScript
+
+When a Java method was called from JavaScript, it can also return values.
+
+**WARNING** This is, for now, implemented in a very limited way. You can easily find cases that do not work yet.
+
+A function could, for example, return an array. To do this, you must create your own ```JsArray``` type, and this type must not have any generic parameters:
+
+    private class TodoArray extends JsArray<Todo> {
+        public TodoArray(List<Todo> todos) {
+            super(todos);
+        }
+    }
+
+Methods can also return primitive data types, like the ```Todo``` class from the example above:
+
+    public class Todo {
+        //...
+        public String getText() {
+            return text;
+        }
+        //...
+    }
+
+When you call those functions from JavaScript, you must ```await``` the call, since calling into Java can always be asynchronous:
+
+    window.callApi(async api => {
+        const todos = await api.todo.getTodos();
+        //...
+
+        todos.forEach(async t => {
+            //...
+            item.getElementsByClassName('text')[0].innerText = await t.getText();
+            item.getElementsByClassName('details')[0].innerText = await t.getDetails();
+            //...
+        });
+    });
 
 ### Calling Into JavaScript Code from Java
 

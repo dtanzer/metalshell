@@ -55,9 +55,9 @@ public class MessageRouterHandler extends CefMessageRouterHandlerAdapter {
 			Gson gson = new Gson();
 			FunctionCall functionCall = gson.fromJson(request.substring("--call:".length()), FunctionCall.class);
 
-			jsApiCache.call(functionCall);
+			ObjectDescription objectDescription = jsApiCache.call(functionCall);
 
-			callback.success("TODO: Add result of funciton call, as an object description");
+			callback.success(objectDescription.describe());
 			return true;
 		}
 
