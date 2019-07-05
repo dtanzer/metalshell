@@ -4,6 +4,8 @@ Build GUIs for Java / JVM applications with HTML, CSS and JavaScript (think: "El
 
 Metal Shell is a **proof of concept** and a playground so far. For now, it **only** works on **Win64** (but adding more operating systems is definitely a priority for me). Do not use it for anything productive yet - But please play around with it and send me your feedback.
 
+Want to stay in touch with the progress of MetalShell? Star this project and follow me on Twitter, I am [@dtanzer](https://twitter.com/dtanzer/) there.
+
 ## Getting Started
 
 Clone the repository on a Windows 64 machine. Download the JCEF library from [https://github.com/dtanzer/metalshell/releases/tag/jcef-lib-201906](https://github.com/dtanzer/metalshell/releases/tag/jcef-lib-201906) and extract the files inside the ZIP to ```shell/lib/jcef``` (after that, you should have a directory called ```win64``` inside). Then, type
@@ -78,7 +80,7 @@ To be able to call back into Java, you have to load a bit of JavaScript from Met
 
 where ```exampleApi``` is the name you gave the API when registering it and ```doSomething``` is the name of the Java method on the registered class.
 
-### Callint Into JavaScript Code from Java
+### Calling Into JavaScript Code from Java
 
 If you also want to start code in the Browser from your JVM code, you first must register an interface that you want to call from Java:
 
@@ -121,9 +123,9 @@ What I need right now is feedback. Please create issues with your requirements /
 
 This program is distributed under the AGPL - at least for now, until I know how I really want to license it.
 
-I do understand that this might be an impediment to you adopting this framework. But right now, it is a proof-of-concept anyway and not production ready yet.
+I do understand that many of you might be interested in a more commercial-friendly licence. But right now, it is a proof-of-concept anyway and not production ready yet. And I also still need to figure out how I could support an open-source product with a commercial-friendly licence, should it ever become popular ;)
 
-If you are interested in getting a more commercially friendly license, please contact me at [business@davidtanzer.net](mailto:business@davidtanzer.net).
+Anyway, if you are interested in getting a more commercially friendly license, let's chat about how I could do this: Send me a message on Twitter, I am [@dtanzer](https://twitter.com/dtanzer/) there and my DMs are open.
 
 ## License and Copying
 
