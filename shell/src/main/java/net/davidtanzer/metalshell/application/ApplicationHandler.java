@@ -18,11 +18,17 @@ package net.davidtanzer.metalshell.application;
 
 import net.davidtanzer.metalshell.jsapi.JsApiSchemeHandler;
 import org.cef.CefApp;
+import org.cef.callback.CefCommandLine;
 import org.cef.handler.CefAppHandlerAdapter;
 
 public class ApplicationHandler extends CefAppHandlerAdapter {
-	public ApplicationHandler() {
-		super(new String[0]);
+	public ApplicationHandler(String[] args) {
+		super(args);
+	}
+
+	@Override
+	public void onBeforeCommandLineProcessing(String s, CefCommandLine cefCommandLine) {
+		super.onBeforeCommandLineProcessing(s, cefCommandLine);
 	}
 
 	@Override

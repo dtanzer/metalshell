@@ -17,7 +17,6 @@
 package net.davidtanzer.metalshell;
 
 import net.davidtanzer.metalshell.application.ApplicationHandler;
-import net.davidtanzer.metalshell.jsapi.ClassEntry;
 import net.davidtanzer.metalshell.jsapi.JsCacheBuilder;
 import net.davidtanzer.metalshell.jsapi.MessageRouterHandler;
 import org.cef.CefApp;
@@ -58,8 +57,9 @@ public class MetalShell {
 		CefSettings settings = new CefSettings();
 		settings.windowless_rendering_enabled = false;
 
-		cefApp = CefApp.getInstance(new String[] {"--disable-gpu", "--no-gpu"}, settings);
-		cefApp.addAppHandler(new ApplicationHandler());
+		String[] args = {"--disable-gpu", "--disable-gpu-compositing"};
+		cefApp = CefApp.getInstance(args, settings);
+		cefApp.addAppHandler(new ApplicationHandler(args));
 
 		return this;
 	}
